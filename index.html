@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}</style>
+<title>恐怖の種</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: a full-screen night dump; a title block low-left like a warning placard, subtitles centered low, thin controls along the top */
+:root{
+  --void:#060505;
+  --bone:#e6ddcc;
+  --ash:#958b7d;
+  --blood:#a3150f;
+  --ember:#ff4a2a;
+  --line:rgba(230,221,204,.18);
+  --f-display:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--void);color:var(--bone);font-family:var(--f-body);overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;padding-inline:16px;text-align:center;color:var(--ash)}
+.screen{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:flex-end;gap:16px;
+  padding-block:calc(32px + env(safe-area-inset-top,0px)) calc(36px + env(safe-area-inset-bottom,0px));padding-inline:clamp(16px,6vw,72px);
+  background:linear-gradient(to top,rgba(6,5,5,.96) 0%,rgba(6,5,5,.7) 45%,rgba(6,5,5,.15) 100%)}
+.kicker{margin:0;font:700 12px/1.4 var(--f-body);letter-spacing:.32em;color:var(--ember)}
+.title{margin:0;font:900 clamp(3.2rem,11vw,7.5rem)/1 var(--f-display);letter-spacing:.08em;color:var(--bone);
+  text-shadow:0 0 30px rgba(163,21,15,.55),0 3px 0 #000}
+.title span{color:var(--blood)}
+.lede{margin:0;max-width:34rem;font-size:15px;line-height:1.9;color:var(--bone)}
+.meta{margin:0;font-size:12.5px;color:var(--ash);letter-spacing:.06em}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{appearance:none;border:1px solid var(--line);background:rgba(230,221,204,.05);color:var(--bone);border-radius:2px;
+  padding:13px 24px;font:700 15px/1 var(--f-body);letter-spacing:.18em;cursor:pointer;transition:background .2s,border-color .2s}
+.btn:hover{border-color:rgba(230,221,204,.5)}
+.btn:focus-visible{outline:2px solid var(--ember);outline-offset:3px}
+.btn.primary{background:var(--blood);border-color:var(--blood)}
+.btn.primary:hover{background:#c01d15}
+.btn.small{padding:8px 14px;font-size:12.5px;letter-spacing:.08em}
+.note{margin:0;font-size:12px;line-height:1.7;color:var(--ash)}
+#hud{position:fixed;inset:0;z-index:3;pointer-events:none}
+.top{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.mark{margin:0;font:900 1.15rem/1 var(--f-display);letter-spacing:.12em;text-shadow:0 1px 8px #000}
+.mark span{color:var(--blood)}
+.ctrls{display:flex;gap:8px;pointer-events:auto}
+.bar{position:absolute;left:0;right:0;top:0;height:3px;background:rgba(230,221,204,.08)}
+.bar i{display:block;height:100%;width:0;background:var(--blood)}
+.sub{position:absolute;left:50%;bottom:calc(40px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(46rem,calc(100% - 32px));margin:0;
+  text-align:center;font:500 clamp(1rem,2.4vw,1.35rem)/1.7 var(--f-body);color:var(--bone);text-shadow:0 0 6px #000,0 2px 2px #000;text-wrap:balance;min-height:2.2em}
+#end .actions{margin-top:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head><body style="margin:0">
+<div id="stage" aria-label="夜の廃棄場で、見たことのない植物が育ち、実を食べた人が凶暴化し、廃棄場が植物に覆われていく3D映像"></div>
+
+<div id="hud" hidden>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="top">
+    <p class="mark">恐怖の<span>種</span></p>
+    <div class="ctrls"><button class="btn small" id="pauseBtn">一時停止</button><button class="btn small" id="restartBtn">最初から</button></div>
+  </div>
+  <p class="sub" id="sub" aria-live="polite"></p>
+</div>
+
+<section class="screen" id="start">
+  <p class="kicker">入場前ブリーフィング</p>
+  <h1 class="title">恐怖の<span>種</span></h1>
+  <p class="lede">規格外の農作物が捨てられていた廃棄場で、何が起きたのか。物語と、あなたのミッションをお伝えします。</p>
+  <p class="meta">約1分20秒・ナレーションと効果音が流れます・ドラッグで見回せます</p>
+  <div class="actions">
+    <button class="btn primary" id="playBtn">再生する</button>
+    <button class="btn" id="vrBtn">VRで見る</button>
+  </div>
+  <p class="note" id="vrNote" hidden></p>
+</section>
+
+<section class="screen" id="end" hidden>
+  <p class="kicker">MISSION</p>
+  <p class="title">植物の<span>根</span>を切れ</p>
+  <p class="lede">これ以上の侵食と被害を防ぐため、中にある植物の根を見つけて、切ってきてください。</p>
+  <div class="actions"><button class="btn primary" id="againBtn">もう一度見る</button></div>
+</section>
+
+<audio id="narr" src="narration.mp3" preload="auto"></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const CUE={starts:[2.5,6.21,14.55,23.2,28.59,37.76,49.75,59.02,68.04],durs:[1.21,6.34,6.85,3.79,7.98,7.48,7.08,5.52,7.26],total:82.3};
+const LINES=['恐怖の種。','ココは、規格外や作りすぎた農作物を捨てていた廃棄場。','ある日、廃棄された農作物の間から、見たことのない植物が生えてきました。','やがて、その植物は真っ赤な実をつけた。',
+  '見たことのない実だったが、それを見た人は何故か魅了されてしまい、思わず口にしてしまった。','しかしそれは、口にした人の理性を奪い、凶暴化させてしまう恐怖の実だった。',
+  '凶暴化した人は農場の人々を襲い、その後、何処かに消えてしまいました。','やがて廃棄場は、その植物に侵食されてしまいました。','これ以上の侵食、被害を防ぐために、中にある植物の根を切ってきてください。'];
+const S=CUE.starts;
+const stageEl=$('stage'), narr=$('narr');
+const reduceMotion=!!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+if(typeof THREE==='undefined'){ stageEl.innerHTML='<div class="fallback"><p>3D表示用のライブラリを読み込めませんでした。ページを再読み込みしてください。</p></div>'; return; }
+let renderer; try{ renderer=new THREE.WebGLRenderer({antialias:true}); }catch(e){ stageEl.innerHTML='<div class="fallback"><p>このブラウザでは3D表示（WebGL）を利用できません。</p></div>'; return; }
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75)); renderer.xr.enabled=true; renderer.xr.setReferenceSpaceType('local-floor');
+stageEl.appendChild(renderer.domElement);
+const V=(x,y,z)=>new THREE.Vector3(x,y,z), UP=V(0,1,0);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const rnd=mulberry32(2026), R=(a,b)=>a+(b-a)*rnd();
+const sm=(a,b,x)=>{ const t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); };
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x07080a); scene.fog=new THREE.FogExp2(0x07080a,0.085);
+const camera=new THREE.PerspectiveCamera(70,1,0.05,120); camera.rotation.order='YXZ';
+const dolly=new THREE.Group(); dolly.add(camera); scene.add(dolly);
+function cv(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); return new THREE.CanvasTexture(c); }
+function blot(g,x,y,r,col){ const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,col); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.beginPath(); g.arc(x,y,r,0,7); g.fill(); }
+const glowTex=cv(64,64,(g,w,h)=>blot(g,32,32,32,'rgba(255,255,255,1)'));
+
+/* ---------- light ---------- */
+const hemi=new THREE.HemisphereLight(0x3a4560,0x0a0705,0.35); scene.add(hemi);
+const moon=new THREE.DirectionalLight(0x9fb2d8,0.35); moon.position.set(-8,12,-6); scene.add(moon);
+{ const m=new THREE.Sprite(new THREE.SpriteMaterial({map:cv(256,256,(g)=>{ blot(g,128,128,128,'rgba(255,235,200,.4)'); g.fillStyle='#efe4c8'; g.beginPath(); g.arc(128,128,36,0,7); g.fill(); }),fog:false,transparent:true,depthWrite:false}));
+  m.scale.set(18,18,1); m.position.set(-22,20,-40); scene.add(m); }
+{ const n=600,p=new Float32Array(n*3); for(let i=0;i<n;i++){ const th=R(0,6.28),ph=R(.1,1.4),r=80; p[i*3]=r*Math.cos(th)*Math.cos(ph); p[i*3+1]=r*Math.sin(ph); p[i*3+2]=r*Math.sin(th)*Math.cos(ph); }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(p,3)); scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xcfd6ff,size:.3,fog:false,transparent:true,opacity:.7}))); }
+
+/* ---------- ground, waste piles, crates, sign ---------- */
+const dirt=cv(512,512,(g,w,h)=>{ g.fillStyle='#2a2119'; g.fillRect(0,0,w,h); for(let i=0;i<9000;i++){ g.fillStyle=rnd()<.5?'rgba(255,240,220,.04)':'rgba(0,0,0,.12)'; g.fillRect(R(0,w),R(0,h),R(1,3),R(1,3)); }
+  for(let i=0;i<30;i++) blot(g,R(0,w),R(0,h),R(20,70),rnd()<.5?'rgba(10,8,5,.5)':'rgba(60,50,30,.3)'); });
+dirt.wrapS=dirt.wrapT=THREE.RepeatWrapping; dirt.repeat.set(10,10);
+const ground=new THREE.Mesh(new THREE.CircleGeometry(45,48),new THREE.MeshStandardMaterial({map:dirt,roughness:1})); ground.rotation.x=-Math.PI/2; scene.add(ground);
+const rot=cv(256,256,(g,w,h)=>{ g.fillStyle='#3a2a1a'; g.fillRect(0,0,w,h); for(let i=0;i<40;i++) blot(g,R(0,w),R(0,h),R(10,40),['rgba(60,70,30,.6)','rgba(20,14,8,.7)','rgba(90,60,30,.5)'][i%3]); });
+rot.wrapS=rot.wrapT=THREE.RepeatWrapping;
+const PILES=[[-3.4,-4.6,1.6,0.75],[-1.6,-6.4,1.4,0.7],[1.7,-5.8,1.7,0.8],[3.7,-3.7,1.3,0.6],[-5.2,-1.8,1.2,0.55],[5.2,-1.2,1.3,0.6],[0.4,-8.6,2.0,0.9],[-6.2,-6.5,1.6,0.7],[6.4,-6.0,1.7,0.75],[0,-3.4,0.75,0.28]];
+const pileM=new THREE.MeshStandardMaterial({map:rot,roughness:1});
+PILES.forEach(([x,z,r,h])=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(r,24,12,0,Math.PI*2,0,Math.PI/2),pileM); m.scale.y=h/r; m.position.set(x,0,z); scene.add(m); });
+function onPile(i){ const [x,z,r,h]=PILES[i]; const a=R(0,6.28), d=Math.sqrt(rnd())*r*0.92; const y=h*Math.sqrt(Math.max(0,1-(d/r)*(d/r))); return V(x+Math.cos(a)*d,y,z+Math.sin(a)*d); }
+const dummy=new THREE.Object3D(), tc=new THREE.Color();
+function vegs(geo,count,cols,rough,sc){
+  const im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({roughness:rough}),count);
+  for(let i=0;i<count;i++){ const p=onPile((rnd()*PILES.length)|0); dummy.position.copy(p); dummy.rotation.set(R(0,6),R(0,6),R(0,6)); const s=R(sc[0],sc[1]); dummy.scale.set(s,s*R(.8,1.1),s); dummy.updateMatrix(); im.setMatrixAt(i,dummy.matrix);
+    tc.set(cols[(rnd()*cols.length)|0]).multiplyScalar(R(.55,1)); im.setColorAt(i,tc); }
+  scene.add(im); return im;
+}
+vegs(new THREE.SphereGeometry(0.05,10,8),260,[0x8a1a12,0x6a2a12,0x4a3018,0x7a6a20],.5,[.8,1.4]);           // tomatoes, some rotten
+vegs(new THREE.SphereGeometry(0.11,12,10),70,[0x8aa060,0x6d7a3a,0x5a5a2a],.8,[.8,1.3]);                  // cabbages
+vegs(new THREE.SphereGeometry(0.13,14,10),45,[0xc8661c,0x9a5a1a,0x6a4a1a],.6,[.7,1.2]);                   // squash
+vegs(new THREE.ConeGeometry(0.025,0.18,8),140,[0xd06a18,0x9a5014,0x5a3a14],.6,[.8,1.3]);                  // carrots
+vegs(new THREE.SphereGeometry(0.045,10,8).scale(1,1,2.3),90,[0x2a1530,0x3a2040,0x4a3020],.4,[.8,1.2]);  // eggplants
+vegs(new THREE.SphereGeometry(0.045,8,6).scale(1.3,1,1),160,[0x7a5a36,0x5a4028,0x4a3420],.95,[.8,1.4]);    // potatoes
+{ const slat=cv(128,128,(g,w,h)=>{ g.fillStyle='#4a3826'; g.fillRect(0,0,w,h); g.fillStyle='#0a0705'; for(let y=0;y<h;y+=32) g.fillRect(0,y+26,w,6); for(let i=0;i<10;i++) blot(g,R(0,w),R(0,h),R(8,30),'rgba(0,0,0,.4)'); });
+  const cm=new THREE.MeshStandardMaterial({map:slat,roughness:.95});
+  [[-2.6,-2.6,.3],[2.5,-2.4,-.4],[-4.4,-3.2,.9],[4.6,-2.6,1.2],[-1.0,-5.0,.2],[2.8,-7.2,-.6],[-3.0,-7.6,.5],[1.2,-2.2,.8]].forEach(([x,z,r],i)=>{
+    const c=new THREE.Mesh(new THREE.BoxGeometry(.6,.36,.42),cm); c.position.set(x,.18+(i%3===0?0:0),z); c.rotation.set(i%4===1?.6:0,r,i%4===2?-.35:0); if(i%4===1) c.position.y=.26; scene.add(c); });
+}
+// sign
+{
+  const tex=cv(1024,512,()=>{}), cvs=tex.image;
+  const draw=()=>{ const g=cvs.getContext('2d'); g.fillStyle='#5b4a36'; g.fillRect(0,0,1024,512); for(let y=0;y<512;y+=64){ g.fillStyle='rgba(0,0,0,.35)'; g.fillRect(0,y+58,1024,6); }
+    for(let i=0;i<40;i++) blot(g,R(0,1024),R(0,512),R(20,90),'rgba(20,12,6,.45)');
+    g.fillStyle='#e8ddc4'; g.textAlign='center'; g.font='900 120px "Zen Old Mincho", serif'; g.fillText('規格外農産物',512,200);
+    g.font='900 150px "Zen Old Mincho", serif'; g.fillText('廃 棄 場',512,370);
+    g.fillStyle='#a3150f'; g.font='700 52px "Zen Kaku Gothic New", sans-serif'; g.fillText('関係者以外 立入禁止',512,460);
+    g.fillStyle='rgba(120,10,6,.75)'; for(let i=0;i<6;i++){ const x=R(150,870); g.fillRect(x,380,R(4,8),R(40,110)); } tex.needsUpdate=true; };
+  draw(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  const sg=new THREE.Group(); sg.position.set(-2.3,0,-2.2); sg.rotation.set(0,0.55,0.06); scene.add(sg);
+  const board=new THREE.Mesh(new THREE.PlaneGeometry(1.3,0.65),new THREE.MeshStandardMaterial({map:tex,roughness:.9,emissive:0x1a120a})); board.position.y=1.2; sg.add(board);
+  const pm=new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:1}); [-0.55,0.55].forEach(x=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(.07,1.5,.07),pm); p.position.set(x,.75,-.04); sg.add(p); });
+}
+// broken fence at the back
+{ const fm=new THREE.MeshStandardMaterial({color:0x2a2018,roughness:1});
+  for(let i=0;i<22;i++){ const a=-2.4+i*0.23, r=10.5; const p=new THREE.Mesh(new THREE.BoxGeometry(.08,R(.9,1.5),.08),fm); p.position.set(Math.sin(a)*r,.6,-Math.cos(a)*r); p.rotation.set(R(-.15,.15),0,R(-.2,.2)); scene.add(p); } }
+
+/* ---------- the plant: stem, branches, leaves, red fruit ---------- */
+const PLANT=V(0,0.2,-3.4);
+const stemM=new THREE.MeshStandardMaterial({color:0x2c3a16,roughness:.8,emissive:0x050800});
+function growTube(curve,r,mat,seg){ const g=new THREE.TubeGeometry(curve,seg||48,r,7,false); const m=new THREE.Mesh(g,mat); m.userData.total=g.index.count; g.setDrawRange(0,0); scene.add(m); return m; }
+function setGrow(m,k){ const n=Math.floor(m.userData.total*Math.max(0,Math.min(1,k))/6)*6; m.geometry.setDrawRange(0,n); m.visible=n>0; }
+const stem=growTube(new THREE.CatmullRomCurve3([PLANT.clone(),V(0.05,0.6,-3.4),V(-0.08,1.1,-3.38),V(0.04,1.55,-3.42),V(0,1.85,-3.4)]),0.045,stemM);
+const branches=[], leaves=[], fruits=[];
+for(let i=0;i<7;i++){
+  const t=0.3+i*0.09, a=i*2.4+R(-.3,.3), y=0.2+t*1.65, base=V(Math.sin(i)*0.04,y,-3.4);
+  const tip=base.clone().add(V(Math.cos(a)*R(.35,.55),R(.15,.35),Math.sin(a)*R(.3,.5)));
+  const mid=base.clone().lerp(tip,.5).add(V(0,.08,0));
+  branches.push({m:growTube(new THREE.CatmullRomCurve3([base,mid,tip]),0.018,stemM,16),t0:i*0.08,tip,a});
+}
+const leafShape=new THREE.Shape(); leafShape.moveTo(0,0); leafShape.quadraticCurveTo(0.09,0.1,0,0.28); leafShape.quadraticCurveTo(-0.09,0.1,0,0);
+const leafGeo=new THREE.ShapeGeometry(leafShape,6); const leafM=new THREE.MeshStandardMaterial({color:0x2f5a1c,roughness:.6,side:THREE.DoubleSide,emissive:0x061004});
+branches.forEach((b,i)=>{ for(let k=0;k<4;k++){ const l=new THREE.Mesh(leafGeo,leafM); const p=b.tip.clone().lerp(V(0,b.tip.y-0.1,-3.4),k*0.22); l.position.copy(p); l.lookAt(p.clone().add(V(Math.cos(b.a+k),R(.2,.8),Math.sin(b.a+k)))); l.rotateX(Math.PI/2); l.scale.setScalar(0.001); scene.add(l); leaves.push({l,t0:b.t0+0.2+k*0.06,s:R(.8,1.25)}); } });
+const fruitGeo=new THREE.LatheGeometry([[0,0],[0.035,0.012],[0.048,0.06],[0.044,0.13],[0.03,0.19],[0.012,0.225],[0,0.235]].map(([x,y])=>new THREE.Vector2(x,y)),16);
+const fruitM=new THREE.MeshStandardMaterial({color:0xc1120a,roughness:.25,metalness:.1,emissive:0x5a0000});
+branches.forEach((b,i)=>{ if(i===6) return; const f=new THREE.Group(); f.position.copy(b.tip); const m=new THREE.Mesh(fruitGeo,fruitM); m.rotation.set(Math.PI+R(-.4,.4),0,R(-.4,.4)); f.add(m);
+  const cal=new THREE.Mesh(new THREE.CylinderGeometry(.03,.012,.03,8),stemM); f.add(cal);
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xff2a10,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})); glow.scale.set(.6,.6,1); glow.position.y=-.12; f.add(glow);
+  f.scale.setScalar(0.001); scene.add(f); fruits.push({f,glow,t0:i*0.25}); });
+const fruitLight=new THREE.PointLight(0xff2010,0,7,2); fruitLight.position.set(0,1.2,-3.0); scene.add(fruitLight);
+// the root core and its roots (revealed when the plant spreads)
+const coreM=new THREE.MeshStandardMaterial({color:0x5a0a08,roughness:.4,emissive:0x400000});
+const core=new THREE.Mesh(new THREE.SphereGeometry(0.32,20,16),coreM); core.scale.set(1,0.55,1); core.position.set(0,0.12,-3.4); core.visible=false; scene.add(core);
+const coreRing=new THREE.Mesh(new THREE.RingGeometry(0.55,0.62,48).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xff3a1a,transparent:true,opacity:0,depthWrite:false})); coreRing.position.set(0,0.03,-3.4); scene.add(coreRing);
+
+/* ---------- vines that overrun the dump ---------- */
+const vineM=new THREE.MeshStandardMaterial({color:0x2a2414,roughness:.7,emissive:0x140200});
+const vines=[];
+for(let i=0;i<40;i++){
+  const a=i/40*Math.PI*2+R(-.08,.08), len=R(3,9), pts=[V(0,0.1,-3.4)];
+  for(let k=1;k<=10;k++){ const d=len*k/10, ang=a+Math.sin(k*1.3+i)*0.35; const x=Math.sin(ang)*d, z=-3.4-Math.cos(ang)*d; let y=0.06;
+    PILES.forEach(([px,pz,r,h])=>{ const dd=Math.hypot(x-px,z-pz); if(dd<r) y=Math.max(y,h*Math.sqrt(1-(dd/r)*(dd/r))+0.05); }); pts.push(V(x,y,z)); }
+  vines.push({m:growTube(new THREE.CatmullRomCurve3(pts),R(.025,.06),vineM,60),t0:R(0,.35),sp:R(.7,1.2)});
+}
+// a few vines curl in close around the viewer's feet
+for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, pts=[]; for(let k=0;k<=12;k++){ const t=k/12, r=1.35-0.25*t, aa=a+t*2.2; pts.push(V(Math.sin(aa)*r,0.06+Math.sin(t*6)*0.04,Math.cos(aa)*r)); }
+  vines.push({m:growTube(new THREE.CatmullRomCurve3(pts),.035,vineM,40),t0:.45+i*.04,sp:1}); }
+const berries=[];
+{ const bm=new THREE.MeshBasicMaterial({color:0xff2a14}); vines.forEach((v,i)=>{ if(i%2) return; const c=v.m.geometry.parameters.path; for(let k=0;k<3;k++){ const u=R(.3,.95); const b=new THREE.Mesh(new THREE.SphereGeometry(.035,8,6),bm); b.position.copy(c.getPointAt(u)).add(V(0,.04,0)); b.visible=false; scene.add(b); berries.push({b,v,u}); } }); }
+const veinTex=cv(512,512,(g,w,h)=>{ g.clearRect(0,0,w,h); g.strokeStyle='rgba(150,10,6,.8)'; for(let i=0;i<60;i++){ let x=w/2,y=h/2,a=R(0,6.28); g.lineWidth=R(1,4); g.beginPath(); g.moveTo(x,y); for(let k=0;k<30;k++){ a+=R(-.5,.5); x+=Math.cos(a)*8; y+=Math.sin(a)*8; g.lineTo(x,y);} g.stroke(); } });
+const veins=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({map:veinTex,transparent:true,opacity:0,depthWrite:false})); veins.rotation.x=-Math.PI/2; veins.position.set(0,0.02,-3.4); scene.add(veins);
+
+/* ---------- the farmer ---------- */
+const skinM=new THREE.MeshStandardMaterial({color:0xc08a6a,roughness:.6}), clothM=new THREE.MeshStandardMaterial({color:0x34465a,roughness:.9}), shirtM=new THREE.MeshStandardMaterial({color:0x8a7a5a,roughness:.9});
+const man=new THREE.Group(); scene.add(man); man.visible=false;
+const hips=new THREE.Group(); hips.position.y=0.92; man.add(hips);
+const upper=new THREE.Group(); hips.add(upper);
+function limb(len,r,mat){ const g=new THREE.Group(); const m=new THREE.Mesh(new THREE.CylinderGeometry(r*0.85,r,len,10).translate(0,-len/2,0),mat); g.add(m); return g; }
+const legL=limb(0.88,0.075,clothM), legR=limb(0.88,0.075,clothM); legL.position.x=-0.1; legR.position.x=0.1; hips.add(legL,legR);
+[legL,legR].forEach(l=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(.12,.08,.24),new THREE.MeshStandardMaterial({color:0x1a120c})); b.position.set(0,-0.88,0.05); l.add(b); });
+const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.17,0.62,12).translate(0,0.31,0),shirtM); upper.add(torso);
+const bib=new THREE.Mesh(new THREE.CylinderGeometry(0.195,0.175,0.35,12,1,true,-0.9,1.8).translate(0,0.18,0),clothM); upper.add(bib);
+const headG=new THREE.Group(); headG.position.y=0.74; upper.add(headG);
+const head=new THREE.Mesh(new THREE.SphereGeometry(0.115,16,12),skinM); headG.add(head);
+const hat=new THREE.Group(); hat.position.y=0.08; headG.add(hat);
+const hatM=new THREE.MeshStandardMaterial({color:0xb8a060,roughness:1}); hat.add(new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.015,20),hatM)); { const cr=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.13,0.1,16),hatM); cr.position.y=0.05; hat.add(cr); }
+const eyes=[-0.04,0.04].map(x=>{ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xff1a0a,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})); s.scale.set(.06,.06,1); s.position.set(x,0.02,0.11); headG.add(s); return s; });
+const armL=limb(0.62,0.05,shirtM), armR=limb(0.62,0.05,shirtM); armL.position.set(-0.24,0.58,0); armR.position.set(0.24,0.58,0); upper.add(armL,armR);
+[armL,armR].forEach(a=>{ const h=new THREE.Mesh(new THREE.SphereGeometry(.05,10,8),skinM); h.position.y=-0.64; a.add(h); });
+const bitten=new THREE.Group(); { const m=new THREE.Mesh(fruitGeo,fruitM); m.rotation.x=Math.PI; bitten.add(m); } bitten.visible=false; scene.add(bitten);
+const manPath=[V(-5.2,0,-1.3),V(-3.2,0,-2.3),V(-1.2,0,-3.0),V(-0.55,0,-3.15)];
+const walkCurve=new THREE.CatmullRomCurve3(manPath);
+
+/* ---------- panels: title, mission, subtitles (VR), end ---------- */
+function panel(w,h,cw,chh,drawFn,pos){
+  const tex=cv(cw,chh,()=>{}); const draw=()=>{ const g=tex.image.getContext('2d'); g.clearRect(0,0,cw,chh); drawFn(g,cw,chh); tex.needsUpdate=true; };
+  draw(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0,depthWrite:false,fog:false}));
+  m.position.copy(pos); m.renderOrder=20; scene.add(m); m.userData.redraw=draw; return m;
+}
+const titleP=panel(3.4,1.7,1024,512,(g,w,h)=>{ g.textAlign='center'; g.shadowColor='rgba(170,10,6,.9)'; g.shadowBlur=40; g.fillStyle='#e6ddcc'; g.font='900 210px "Zen Old Mincho", serif'; g.fillText('恐怖の種',w/2,280);
+  g.shadowBlur=0; g.fillStyle='rgba(163,21,15,.85)'; for(let i=0;i<9;i++){ const x=R(240,790); g.fillRect(x,265,R(5,10),R(30,120)); }
+  g.fillStyle='#958b7d'; g.font='500 40px "Zen Kaku Gothic New", sans-serif'; g.fillText('入場前ブリーフィング',w/2,420); },V(0,1.85,-4.6));
+const missionP=panel(2.6,1.3,1024,512,(g,w,h)=>{ g.fillStyle='rgba(10,6,6,.82)'; g.fillRect(0,0,w,h); g.strokeStyle='#a3150f'; g.lineWidth=8; g.strokeRect(8,8,w-16,h-16);
+  g.textAlign='center'; g.fillStyle='#ff4a2a'; g.font='700 54px "Zen Kaku Gothic New", sans-serif'; g.fillText('M I S S I O N',w/2,100);
+  g.fillStyle='#e6ddcc'; g.font='900 130px "Zen Old Mincho", serif'; g.fillText('植物の根を切れ',w/2,270);
+  g.font='500 38px "Zen Kaku Gothic New", sans-serif'; g.fillStyle='#cfc4b2'; g.fillText('中にある植物の根を見つけて、切ってきてください',w/2,360);
+  g.save(); g.translate(w/2,440); g.strokeStyle='#e6ddcc'; g.lineWidth=7; g.beginPath(); g.arc(-60,10,22,0,7); g.stroke(); g.beginPath(); g.arc(-60,-30,22,0,7); g.stroke();
+  g.beginPath(); g.moveTo(-40,0); g.lineTo(70,-50); g.moveTo(-40,-20); g.lineTo(70,30); g.stroke(); g.restore(); },V(0,2.5,-3.1));
+const subP=panel(2.5,0.42,1200,200,(g,w,h)=>{},V(0,0.98,-2.35)); subP.visible=false;
+let subText='';
+function setVRSub(t){ if(t===subText) return; subText=t; const g=subP.material.map.image.getContext('2d'); const w=1200,h=200; g.clearRect(0,0,w,h); if(!t){ subP.material.map.needsUpdate=true; return; }
+  g.fillStyle='rgba(0,0,0,.55)'; g.fillRect(0,0,w,h); g.fillStyle='#efe6d4'; g.textAlign='center'; g.font='500 46px "Zen Kaku Gothic New", sans-serif';
+  const lines=[]; let line=''; for(const ch of t){ if(g.measureText(line+ch).width>w-80){ lines.push(line); line=ch; } else line+=ch; } if(line) lines.push(line);
+  lines.slice(0,3).forEach((l,i)=>g.fillText(l,w/2,(h-(lines.length-1)*60)/2+i*60+16)); subP.material.map.needsUpdate=true; }
+const endP=panel(1.8,0.45,1024,256,(g,w,h)=>{ g.textAlign='center'; g.fillStyle='#e6ddcc'; g.font='500 54px "Zen Kaku Gothic New", sans-serif'; g.fillText('トリガーで、もう一度見る',w/2,150); },V(0,1.35,-2.2));
+// head-locked red flash
+const flash=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),new THREE.MeshBasicMaterial({color:0x8a0000,transparent:true,opacity:0,side:THREE.BackSide,depthTest:false,fog:false})); flash.renderOrder=999; camera.add(flash);
+
+/* ---------- sound effects (WebAudio, started by the play/VR button) ---------- */
+let ac=null, master=null, noiseBuf=null, slither=null;
+function audioInit(){
+  if(ac){ if(ac.state==='suspended') ac.resume(); return; }
+  try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  master=ac.createGain(); master.gain.value=0.7; const comp=ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);
+  noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  // wind + drone bed
+  const n=noise(), lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=380; const ng=ac.createGain(); ng.gain.value=0.07; n.connect(lp); lp.connect(ng); ng.connect(master); n.start();
+  const lfo=ac.createOscillator(); lfo.frequency.value=0.09; const lg=ac.createGain(); lg.gain.value=220; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+  [43.6,46.2].forEach(f=>{ const o=ac.createOscillator(); o.frequency.value=f; const g=ac.createGain(); g.gain.value=0.05; o.connect(g); g.connect(master); o.start(); });
+  // slithering vines (silent until the spread)
+  const s=noise(), bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=1.5; slither=ac.createGain(); slither.gain.value=0; s.connect(bp); bp.connect(slither); slither.connect(master); s.start();
+}
+function noise(){ const s=ac.createBufferSource(); s.buffer=noiseBuf; s.loop=true; return s; }
+function env(g,t0,a,p,d){ g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(p,t0+a); g.gain.exponentialRampToValueAtTime(0.0001,t0+a+d); }
+const sfx={
+  boom(v){ if(!ac) return; const t=ac.currentTime, o=ac.createOscillator(); o.frequency.setValueAtTime(70,t); o.frequency.exponentialRampToValueAtTime(28,t+1.2); const g=ac.createGain(); o.connect(g); g.connect(master); env(g,t,.01,v||.7,1.4); o.start(t); o.stop(t+1.6); },
+  squelch(){ if(!ac) return; const t=ac.currentTime, n=noise(), bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=4; bp.frequency.setValueAtTime(300,t); bp.frequency.exponentialRampToValueAtTime(1200,t+.35); const g=ac.createGain(); n.connect(bp); bp.connect(g); g.connect(master); env(g,t,.02,.35,.4); n.start(t); n.stop(t+.5); },
+  step(v){ if(!ac) return; const t=ac.currentTime, n=noise(), lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=260; const g=ac.createGain(); n.connect(lp); lp.connect(g); g.connect(master); env(g,t,.004,v||.25,.12); n.start(t); n.stop(t+.2); },
+  crunch(){ if(!ac) return; for(let i=0;i<3;i++){ const t=ac.currentTime+i*.12, n=noise(), hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1500; const g=ac.createGain(); n.connect(hp); hp.connect(g); g.connect(master); env(g,t,.003,.35,.09); n.start(t); n.stop(t+.12); } },
+  growl(){ if(!ac) return; const t=ac.currentTime, o=ac.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(85,t); o.frequency.linearRampToValueAtTime(60,t+2.5);
+    const v=ac.createOscillator(); v.frequency.value=24; const vg=ac.createGain(); vg.gain.value=20; v.connect(vg); vg.connect(o.frequency); const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=600; const g=ac.createGain(); o.connect(f); f.connect(g); g.connect(master); env(g,t,.3,.4,2.5); o.start(t); v.start(t); o.stop(t+3); v.stop(t+3); },
+  scream(){ if(!ac) return; const t=ac.currentTime, n=noise(), bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=3; bp.frequency.setValueAtTime(900,t); bp.frequency.linearRampToValueAtTime(2600,t+.4); const g=ac.createGain(); n.connect(bp); bp.connect(g); g.connect(master); env(g,t,.01,.6,1.2); n.start(t); n.stop(t+1.4);
+    [440,466,700].forEach(f=>{ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(f,t); o.frequency.linearRampToValueAtTime(f*1.6,t+.3); const g2=ac.createGain(); o.connect(g2); g2.connect(master); env(g2,t,.01,.18,1.1); o.start(t); o.stop(t+1.3); }); sfx.boom(.9); },
+  beat(){ if(!ac) return; [0,.17].forEach((dt,i)=>{ const t=ac.currentTime+dt, o=ac.createOscillator(); o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(38,t+.12); const g=ac.createGain(); o.connect(g); g.connect(master); env(g,t,.005,i?.35:.5,.16); o.start(t); o.stop(t+.25); }); },
+  sting(){ if(!ac) return; const t=ac.currentTime; [220,233,330,349].forEach(f=>{ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.value=f; const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1800; const g=ac.createGain(); o.connect(lp); lp.connect(g); g.connect(master); env(g,t,.05,.12,3); o.start(t); o.stop(t+3.3); }); sfx.boom(.8); }
+};
+// one-shot cues on the narration clock
+const EVENTS=[
+  [S[0]-0.3,()=>sfx.boom(.6)],[S[2]+0.4,()=>sfx.squelch()],[S[2]+2.2,()=>sfx.squelch()],[S[2]+4.0,()=>sfx.squelch()],[S[3]+0.2,()=>sfx.boom(.45)],
+  ...Array.from({length:9},(_,i)=>[S[4]+0.3+i*0.5,()=>sfx.step(.22)]),[S[4]+6.6,()=>sfx.crunch()],
+  [S[5]+0.4,()=>sfx.growl()],[S[5]+3.5,()=>sfx.growl()],
+  ...Array.from({length:14},(_,i)=>[S[5]+1+i*(0.9-i*0.04),()=>sfx.beat()]),
+  ...Array.from({length:5},(_,i)=>[S[5]+8.0+i*0.3,()=>sfx.step(.45)]),[S[5]+9.6,()=>sfx.scream()],
+  [S[7]+0.2,()=>sfx.boom(.6)],[S[8]-0.3,()=>sfx.sting()]
+];
+
+/* ---------- the timeline ---------- */
+const tmp=V(0,0,0);
+let lastT=-1;
+function updateScene(T,t){
+  if(T<lastT-0.5) lastT=-1;                         // restarted
+  EVENTS.forEach(([at,fn])=>{ if(lastT<at && T>=at) fn(); }); lastT=T;
+  // title
+  titleP.material.opacity=sm(S[0]-1.5,S[0]+0.5,T)*(1-sm(S[1]-0.5,S[1]+1.5,T));
+  // plant growth
+  const g=sm(S[2]+0.3,S[2]+6.5,T);
+  setGrow(stem,g*1.1); branches.forEach(b=>setGrow(b.m,(g-0.35-b.t0)/0.45));
+  leaves.forEach(o=>{ const k=sm(o.t0+0.3,o.t0+0.6,g); o.l.scale.setScalar(Math.max(0.001,k*o.s)); });
+  const sway=Math.sin(t*0.8)*0.02;
+  // fruit
+  const fk=sm(S[3]+0.2,S[3]+3.2,T), pulse=0.75+0.25*Math.sin(t*3.2);
+  fruits.forEach((o,i)=>{ const k=sm(o.t0,o.t0+0.6,fk*1.6); o.f.scale.setScalar(Math.max(0.001,k*1.6)); o.f.rotation.z=sway; o.glow.material.opacity=k*0.55*pulse; });
+  fruitM.emissive.setRGB(0.35*pulse*fk+0.1,0,0);
+  fruitLight.intensity=fk*1.6*pulse;
+  // the farmer walks in, reaches, eats
+  const s4=S[4], s5=S[5];
+  man.visible = T>s4-0.5 && T<s5+9.8;
+  if(man.visible){
+    const wk=sm(s4,s4+4.5,T), p=walkCurve.getPointAt(Math.min(1,wk)); man.position.copy(p);
+    let facing=Math.atan2(walkCurve.getTangentAt(Math.min(.999,wk)).x,walkCurve.getTangentAt(Math.min(.999,wk)).z);
+    const walking=T<s4+4.5, ph=T*7;
+    legL.rotation.x=walking?Math.sin(ph)*0.45:0; legR.rotation.x=walking?-Math.sin(ph)*0.45:0;
+    armL.rotation.set(walking?-Math.sin(ph)*0.35:0,0,0.05); armR.rotation.set(walking?Math.sin(ph)*0.35:0,0,-0.05);
+    upper.rotation.set(0,0,0); headG.rotation.set(0,0,0);
+    if(!walking){ facing=Math.atan2(PLANT.x-man.position.x,PLANT.z-man.position.z); }
+    // reach for a fruit and eat it
+    const reach=sm(s4+4.6,s4+5.6,T), toMouth=sm(s4+5.7,s4+6.5,T);
+    if(T>s4+4.5 && T<s5){ armR.rotation.x=-reach*1.5+toMouth*-0.6; armR.rotation.z=-0.05-toMouth*0.6; headG.rotation.x=toMouth*-0.2+(T>s4+6.6?Math.sin(t*14)*0.06:0); }
+    const victim=fruits[2];
+    if(T>s4+5.5 && T<s4+7){ victim.f.visible=false; bitten.visible=true; armR.updateMatrixWorld(true); bitten.position.copy(armR.localToWorld(tmp.set(0,-0.68,0.04))); }
+    else bitten.visible=false;
+    if(T<s4+5.5) victim.f.visible=true;
+    // transformation
+    const tr=sm(s5,s5+5,T);
+    if(T>s5){
+      const sh=reduceMotion?0:Math.sin(t*40)*0.05*tr*(T<s5+7?1:0.3);
+      upper.rotation.x=0.55*tr+sh; headG.rotation.z=Math.sin(t*9)*0.25*tr; headG.rotation.x=-0.4*tr;
+      armL.rotation.set(-1.2*tr,0,0.4*tr+sh); armR.rotation.set(-1.2*tr,0,-0.4*tr-sh);
+      skinM.color.setRGB(0.75-0.4*tr,0.54-0.25*tr,0.42-0.2*tr);
+      eyes.forEach(e=>e.material.opacity=tr);
+      hat.visible=tr<0.6;
+      // turns to face you, then rushes
+      if(T>s5+6){ facing=Math.atan2(-man.position.x,-man.position.z); }
+      const rush=sm(s5+8.0,s5+9.6,T);
+      if(rush>0){ man.position.lerpVectors(manPath[3],V(0,0,-0.45),rush); const rp=T*14; legL.rotation.x=Math.sin(rp)*0.8; legR.rotation.x=-Math.sin(rp)*0.8; }
+    } else { skinM.color.setRGB(0.75,0.54,0.42); eyes.forEach(e=>e.material.opacity=0); hat.visible=true; }
+    man.rotation.y=facing;
+  }
+  // red flash at the lunge
+  const fl=T>S[5]+9.6 ? Math.max(0,1-(T-(S[5]+9.6))/1.4) : 0; flash.material.opacity=fl*0.85;
+  // spread of the plant
+  const sp=sm(S[7]-0.5,S[7]+9,T);
+  vines.forEach(v=>setGrow(v.m,(sp-v.t0)/0.65*v.sp));
+  berries.forEach(o=>{ o.b.visible=(sp-o.v.t0)/0.65*o.v.sp>o.u; o.b.scale.setScalar(0.8+0.3*Math.sin(t*4+o.u*20)); });
+  veins.material.opacity=sp*0.9;
+  if(slither) slither.gain.value=0.12*sm(S[7]-0.5,S[7]+1,T)*(1-sm(S[8]+4,S[8]+8,T));
+  scene.fog.density=0.085+0.04*sp;
+  // the root core and the mission
+  core.visible=T>S[6]+2; const ck=sm(S[7]+2,S[8]+1,T), cp=0.6+0.4*Math.sin(t*4.5);
+  core.scale.set(1+0.08*cp*ck,0.55+0.05*cp*ck,1+0.08*cp*ck); coreM.emissive.setRGB(0.25+0.6*cp*ck,0,0);
+  coreRing.material.opacity=sm(S[8],S[8]+1.5,T)*(0.5+0.5*Math.sin(t*5)); coreRing.scale.setScalar(1+0.15*Math.sin(t*5));
+  missionP.material.opacity=sm(S[8]-0.2,S[8]+1.2,T);
+  // subtitles
+  let cur=''; S.forEach((st,i)=>{ if(T>=st-0.1 && T<st+CUE.durs[i]+0.9) cur=LINES[i]; });
+  if(renderer.xr.isPresenting) setVRSub(cur); else if($('sub').textContent!==cur) $('sub').textContent=cur;
+  endP.material.opacity=renderer.xr.isPresenting ? sm(CUE.total-3,CUE.total-1.5,T) : 0;
+  $('prog').style.width=(Math.min(1,T/CUE.total)*100).toFixed(2)+'%';
+}
+
+/* ---------- playback clock ---------- */
+let playing=false, ended=false, clockT=0, useClock=false;
+function nowT(){ return useClock ? clockT : narr.currentTime; }
+narr.addEventListener('error',()=>{ useClock=true; });
+narr.addEventListener('ended',()=>onEnd());
+function onEnd(){ ended=true; playing=false; if(!renderer.xr.isPresenting){ $('hud').hidden=true; $('end').hidden=false; $('againBtn').focus(); } }
+function play(fromStart){
+  audioInit(); ended=false;
+  if(fromStart){ narr.currentTime=0; clockT=0; lastT=-1; }
+  playing=true; const p=narr.play(); if(p && p.catch) p.catch(()=>{ useClock=true; });
+  $('pauseBtn').textContent='一時停止';
+}
+function pause(){ playing=false; narr.pause(); $('pauseBtn').textContent='再生'; }
+$('playBtn').addEventListener('click',()=>{ $('start').hidden=true; $('end').hidden=true; $('hud').hidden=false; play(true); });
+$('againBtn').addEventListener('click',()=>{ $('end').hidden=true; $('hud').hidden=false; play(true); });
+$('restartBtn').addEventListener('click',()=>play(true));
+$('pauseBtn').addEventListener('click',()=>{ playing?pause():play(false); });
+addEventListener('keydown',e=>{ if(e.code==='Space' && !$('hud').hidden){ e.preventDefault(); playing?pause():play(false); } });
+
+/* ---------- desktop look ---------- */
+let yaw=0, pitch=-0.06, drag=false, lx=0, ly=0;
+renderer.domElement.addEventListener('pointerdown',e=>{ drag=true; lx=e.clientX; ly=e.clientY; renderer.domElement.setPointerCapture(e.pointerId); });
+renderer.domElement.addEventListener('pointermove',e=>{ if(!drag) return; yaw+=(e.clientX-lx)*0.004; pitch=Math.max(-1.1,Math.min(1.1,pitch+(e.clientY-ly)*0.004)); lx=e.clientX; ly=e.clientY; });
+renderer.domElement.addEventListener('pointerup',()=>{ drag=false; });
+camera.position.set(0,1.6,0);
+
+/* ---------- VR ---------- */
+const vrNote=$('vrNote');
+function note(t){ vrNote.textContent=t; vrNote.hidden=false; }
+if(!navigator.xr) $('vrBtn').hidden=true;
+else navigator.xr.isSessionSupported('immersive-vr').then(ok=>{ if(!ok) $('vrBtn').hidden=true; }).catch(()=>{ $('vrBtn').hidden=true; });
+let vrFrames=0, vrAlign=false;
+const ctrls=[0,1].map(k=>{ const c=renderer.xr.getController(k); dolly.add(c); c.addEventListener('select',()=>{ if(ended || !playing){ play(true); } }); return c; });
+$('vrBtn').addEventListener('click',async()=>{
+  audioInit(); narr.play().then(()=>narr.pause()).catch(()=>{});   // unlock media playback inside the click
+  try{
+    const session=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor']});
+    session.addEventListener('end',()=>{ subP.visible=false; pause(); $('start').hidden=false; $('hud').hidden=true; dolly.position.set(0,0,0); dolly.rotation.set(0,0,0); camera.position.set(0,1.6,0); resize(); });
+    await renderer.xr.setSession(session);
+    $('start').hidden=true; subP.visible=true; vrFrames=0; vrAlign=true; play(true);
+  }catch(e){ note('VRを開始できませんでした（'+(e.name||e.message)+'）。ページの置き場所によってはVRが許可されません。'); }
+});
+const qH=new THREE.Quaternion();
+function alignVR(){ // face the plant and stand at the viewing spot
+  const h=V(0,0,0); camera.getWorldPosition(h); camera.getWorldQuaternion(qH); const f=V(0,0,-1).applyQuaternion(qH); const yawNow=Math.atan2(-f.x,-f.z);
+  const a=-yawNow; dolly.position.sub(h).applyAxisAngle(UP,a).add(h); dolly.rotation.y+=a; camera.getWorldPosition(h); dolly.position.x-=h.x; dolly.position.z-=h.z; }
+
+/* ---------- loop ---------- */
+function resize(){ const w=stageEl.clientWidth||innerWidth, h=stageEl.clientHeight||innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+addEventListener('resize',resize); resize();
+const clock=new THREE.Clock();
+function loop(){
+  const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
+  if(useClock && playing){ clockT+=dt; if(clockT>=CUE.total){ clockT=CUE.total; onEnd(); } }
+  if(renderer.xr.isPresenting){ vrFrames++; if(vrAlign && vrFrames>3){ alignVR(); vrAlign=false; } }
+  else { if(!drag && !playing && $('start').hidden===false){ yaw=Math.sin(t*0.1)*0.3; } camera.rotation.set(pitch,yaw,0); }
+  const T=$('start').hidden ? nowT() : 24 + Math.sin(t*0.05)*0;   // the title screen shows the plant in fruit behind it
+  updateScene(T,t);
+  renderer.render(scene,camera);
+}
+renderer.setAnimationLoop(loop);
+})();
+</script>
+
+</body></html>
