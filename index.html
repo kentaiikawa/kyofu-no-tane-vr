@@ -405,7 +405,7 @@ else navigator.xr.isSessionSupported('immersive-vr').then(ok=>{ if(!ok) $('vrBtn
 let vrFrames=0, vrAlign=false;
 const ctrls=[0,1].map(k=>{ const c=renderer.xr.getController(k); dolly.add(c); c.addEventListener('select',()=>{ if(ended || !playing){ play(true); } }); return c; });
 $('vrBtn').addEventListener('click',async()=>{
-  audioInit(); narr.play().then(()=>narr.pause()).catch(()=>{});   // unlock media playback inside the click
+  audioInit(); narr.currentTime=0; narr.play().catch(()=>{});   // start the narration inside the click itself: Quest blocks play() that comes after the await
   try{
     const session=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor']});
     session.addEventListener('end',()=>{ subP.visible=false; pause(); $('start').hidden=false; $('hud').hidden=true; dolly.position.set(0,0,0); dolly.rotation.set(0,0,0); camera.position.set(0,1.6,0); resize(); });
