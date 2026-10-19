@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
 <style>[hidden]{display:none!important}</style>
 <title>恐怖の種</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -249,7 +250,7 @@ const missionP=panel(2.6,1.3,1024,512,(g,w,h)=>{ g.fillStyle='rgba(10,6,6,.82)';
   g.font='500 38px "Zen Kaku Gothic New", sans-serif'; g.fillStyle='#cfc4b2'; g.fillText('中にある植物の根を見つけて、切ってきてください',w/2,360);
   g.save(); g.translate(w/2,440); g.strokeStyle='#e6ddcc'; g.lineWidth=7; g.beginPath(); g.arc(-60,10,22,0,7); g.stroke(); g.beginPath(); g.arc(-60,-30,22,0,7); g.stroke();
   g.beginPath(); g.moveTo(-40,0); g.lineTo(70,-50); g.moveTo(-40,-20); g.lineTo(70,30); g.stroke(); g.restore(); },V(0,2.5,-3.1));
-const subP=panel(2.5,0.42,1200,200,(g,w,h)=>{},V(0,0.98,-2.35)); subP.visible=false;
+const subP=panel(2.5,0.42,1200,200,(g,w,h)=>{},V(0,0.98,-2.35)); subP.visible=false; subP.material.opacity=1;   // subtitles are drawn at full strength; the panel helper starts every board transparent
 let subText='';
 function setVRSub(t){ if(t===subText) return; subText=t; const g=subP.material.map.image.getContext('2d'); const w=1200,h=200; g.clearRect(0,0,w,h); if(!t){ subP.material.map.needsUpdate=true; return; }
   g.fillStyle='rgba(0,0,0,.55)'; g.fillRect(0,0,w,h); g.fillStyle='#efe6d4'; g.textAlign='center'; g.font='500 46px "Zen Kaku Gothic New", sans-serif';
